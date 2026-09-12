@@ -1,0 +1,197 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------------
+   RODEO Manager — sistema de diseño
+   Rediseño «Prioridad primero»: tema claro «western luminoso». Fondo hueso,
+   tinta casi negra, dorado envejecido solo como acento. Único momento oscuro
+   de la app: el login (ver src/app/login).
+--------------------------------------------------------------------------- */
+
+@theme inline {
+  /* Tipografía */
+  --font-sans: var(--font-public-sans);
+  --font-display: var(--font-antonio);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Tokens de marca */
+  --color-rodeo-bone: var(--rodeo-bone);
+  --color-rodeo-paper: var(--rodeo-paper);
+  --color-rodeo-sand: var(--rodeo-sand);
+  --color-rodeo-chip: var(--rodeo-chip);
+  --color-rodeo-line: var(--rodeo-line);
+  --color-rodeo-card-line: var(--rodeo-card-line);
+  --color-rodeo-ink: var(--rodeo-ink);
+  --color-rodeo-ink-soft: var(--rodeo-ink-soft);
+  --color-rodeo-gold: var(--rodeo-gold);
+  --color-rodeo-gold-ink: var(--rodeo-gold-ink);
+
+  /* Prioridades (tinta + fondo) */
+  --color-priority-critical: var(--priority-critical);
+  --color-priority-critical-bg: var(--priority-critical-bg);
+  --color-priority-high: var(--priority-high);
+  --color-priority-high-bg: var(--priority-high-bg);
+  --color-priority-normal: var(--priority-normal);
+  --color-priority-normal-bg: var(--priority-normal-bg);
+  --color-priority-low: var(--priority-low);
+  --color-priority-low-bg: var(--priority-low-bg);
+
+  /* Estados de tarea (tinta + fondo cuando aplica) */
+  --color-state-pending: var(--state-pending);
+  --color-state-in-progress: var(--state-in-progress);
+  --color-state-in-progress-bg: var(--state-in-progress-bg);
+  --color-state-waiting: var(--state-waiting);
+  --color-state-blocked: var(--state-blocked);
+  --color-state-blocked-bg: var(--state-blocked-bg);
+  --color-state-completed: var(--state-completed);
+  --color-state-completed-bg: var(--state-completed-bg);
+  --color-state-cancelled: var(--state-cancelled);
+
+  /* Mapeo shadcn */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Marca */
+  --rodeo-bone: #faf7f0; /* fondo de app */
+  --rodeo-paper: #ffffff; /* tarjetas */
+  --rodeo-sand: #efe9dc; /* raíles, pistas de barras de progreso */
+  --rodeo-chip: #f1ece0; /* chip neutro de metadatos */
+  --rodeo-line: #e2dacb; /* divisores y bordes de píldora */
+  --rodeo-card-line: #efe6d6; /* borde de tarjeta */
+  --rodeo-ink: #1b1712; /* texto principal */
+  --rodeo-ink-soft: #6f665b; /* texto secundario (≥5:1 sobre hueso) */
+  --rodeo-gold: #b8863b; /* acento en rellenos */
+  --rodeo-gold-ink: #8a6520; /* acento como texto sobre claro */
+
+  /* Prioridades (par tinta/fondo) */
+  --priority-critical: #8f3f22;
+  --priority-critical-bg: #f6e4dd;
+  --priority-high: #8a6520;
+  --priority-high-bg: #f7ecd6;
+  --priority-normal: #3d5566;
+  --priority-normal-bg: #e6ebee;
+  --priority-low: #6f665b;
+  --priority-low-bg: #f1ece0;
+
+  /* Estados */
+  --state-pending: #6f665b;
+  --state-in-progress: #3d5566;
+  --state-in-progress-bg: #e6ebee;
+  --state-waiting: #7d7050;
+  --state-blocked: #8f3f22;
+  --state-blocked-bg: #f6e4dd;
+  --state-completed: #2f5340;
+  --state-completed-bg: #e5eee7;
+  --state-cancelled: #9b9385;
+
+  /* Mapeo shadcn */
+  --background: #faf7f0;
+  --foreground: #1b1712;
+  --card: #ffffff;
+  --card-foreground: #1b1712;
+  --popover: #ffffff;
+  --popover-foreground: #1b1712;
+  --primary: #1b1712; /* acciones principales: tinta, no dorado */
+  --primary-foreground: #faf7f0;
+  --secondary: #f1ece0;
+  --secondary-foreground: #1b1712;
+  --muted: #efe9dc;
+  --muted-foreground: #6f665b;
+  --accent: #f7ecd6;
+  --accent-foreground: #1b1712;
+  --destructive: #8f3f22;
+  --destructive-foreground: #ffffff;
+  --border: #e2dacb;
+  --input: #e2dacb;
+  --ring: #b8863b;
+
+  --radius: 0.875rem; /* 14px, tarjeta base */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-variant-numeric: tabular-nums;
+    /* Área segura en dispositivos con notch (PWA instalada) */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* La tipografía display es de cartel: mayúsculas, condensada, con aire */
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-wide;
+  }
+}
+
+@layer components {
+  /* Titular tipo cartel de concierto */
+  .rodeo-display {
+    @apply font-display font-semibold tracking-[0.06em] uppercase;
+  }
+
+  /* Etiqueta pequeña en versalitas, para metadatos y cabeceras de sección */
+  .rodeo-eyebrow {
+    @apply font-display text-xs tracking-[0.22em] uppercase;
+    color: var(--rodeo-ink-soft);
+  }
+
+  /* Filete fino dorado, sustituye a cualquier adorno western literal */
+  .rodeo-rule {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--rodeo-gold) 20%,
+      var(--rodeo-gold) 80%,
+      transparent
+    );
+    height: 1px;
+  }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
