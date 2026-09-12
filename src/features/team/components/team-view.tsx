@@ -46,14 +46,6 @@ export function TeamView() {
         Normativa de la promotora
       </h2>
       <PromoterRules />
-
-      <div className="mt-6 rounded-2xl bg-[#f3efe6] p-4">
-        <p className="text-rodeo-ink-soft text-[13px] leading-relaxed">
-          Prototipo de interacción: los cambios viven en la memoria del
-          navegador y se pierden al recargar. La base de datos real es la
-          fase 1 pendiente.
-        </p>
-      </div>
     </main>
   );
 }
