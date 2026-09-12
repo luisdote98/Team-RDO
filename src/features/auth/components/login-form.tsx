@@ -65,7 +65,7 @@ export function LoginForm({
       </button>
 
       <p className="mt-1 text-[13px] leading-relaxed text-[#b9ae9c]">
-        Prueba Luis / dote, Oliver / oliver2026 o Guille / guille2026.
+        Prueba Luis / dote., Oliver / bort. o Guille / glassis.
       </p>
     </form>
   );

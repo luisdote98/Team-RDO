@@ -17,9 +17,9 @@ export type Credential = {
 
 /** Luis va primero: es quien más usa la app ahora mismo. */
 export const CREDENTIALS: Credential[] = [
-  { personId: "luis", password: "dote" },
-  { personId: "oliver", password: "oliver2026" },
-  { personId: "guille", password: "guille2026" },
+  { personId: "luis", password: "dote." },
+  { personId: "oliver", password: "bort." },
+  { personId: "guille", password: "glassis." },
 ];
 
 export function checkCredentials(personId: string, password: string): boolean {
