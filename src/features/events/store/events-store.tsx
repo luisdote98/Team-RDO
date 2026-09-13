@@ -97,6 +97,7 @@ type EventsStoreValue = {
   addExpense: (eventId: string, input: ExpenseInput) => void;
   deleteExpense: (eventId: string, expenseId: string) => void;
   setEventArchived: (eventId: string, archived: boolean) => void;
+  deleteEvent: (eventId: string) => void;
   addTaskTemplate: (input: TaskTemplateInput) => void;
 };
 
@@ -119,9 +120,8 @@ export function EventsStoreProvider({
   children: React.ReactNode;
 }) {
   const [events, setEvents] = useState(initialEvents);
-  const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>(
-    initialTaskTemplates,
-  );
+  const [taskTemplates, setTaskTemplates] =
+    useState<TaskTemplate[]>(initialTaskTemplates);
 
   const addEvent = useCallback(
     (input: NewEventInput) => {
@@ -404,28 +404,25 @@ export function EventsStoreProvider({
     );
   }, []);
 
-  const deleteExpense = useCallback(
-    (eventId: string, expenseId: string) => {
-      let previous: EventRecord[] = [];
-      setEvents((prev) => {
-        previous = prev;
-        return prev.map((event) =>
-          event.id !== eventId
-            ? event
-            : {
-                ...event,
-                expenses: event.expenses.filter((e) => e.id !== expenseId),
-              },
-        );
-      });
-      persistOrRevert(
-        persist.deleteExpense(expenseId),
-        () => setEvents(previous),
-        "No se pudo eliminar el gasto. Intenta de nuevo.",
+  const deleteExpense = useCallback((eventId: string, expenseId: string) => {
+    let previous: EventRecord[] = [];
+    setEvents((prev) => {
+      previous = prev;
+      return prev.map((event) =>
+        event.id !== eventId
+          ? event
+          : {
+              ...event,
+              expenses: event.expenses.filter((e) => e.id !== expenseId),
+            },
       );
-    },
-    [],
-  );
+    });
+    persistOrRevert(
+      persist.deleteExpense(expenseId),
+      () => setEvents(previous),
+      "No se pudo eliminar el gasto. Intenta de nuevo.",
+    );
+  }, []);
 
   const setEventArchived = useCallback((eventId: string, archived: boolean) => {
     let previous: EventRecord[] = [];
@@ -439,6 +436,19 @@ export function EventsStoreProvider({
       persist.setEventArchived(eventId, archived),
       () => setEvents(previous),
       "No se pudo guardar el cambio. Intenta de nuevo.",
+    );
+  }, []);
+
+  const deleteEvent = useCallback((eventId: string) => {
+    let previous: EventRecord[] = [];
+    setEvents((prev) => {
+      previous = prev;
+      return prev.filter((event) => event.id !== eventId);
+    });
+    persistOrRevert(
+      persist.deleteEvent(eventId),
+      () => setEvents(previous),
+      "No se pudo eliminar el evento. Intenta de nuevo.",
     );
   }, []);
 
@@ -457,6 +467,7 @@ export function EventsStoreProvider({
       addExpense,
       deleteExpense,
       setEventArchived,
+      deleteEvent,
       addTaskTemplate,
     }),
     [
@@ -473,6 +484,7 @@ export function EventsStoreProvider({
       addExpense,
       deleteExpense,
       setEventArchived,
+      deleteEvent,
       addTaskTemplate,
     ],
   );

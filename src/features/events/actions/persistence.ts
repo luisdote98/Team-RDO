@@ -1,5 +1,6 @@
 "use server";
 
+import { getCurrentUser } from "@/lib/auth/session";
 import { createServiceClient } from "@/lib/supabase/service";
 import type { TaskLike } from "@/lib/tasks";
 import type { TaskStatus } from "@/types/domain";
@@ -8,6 +9,9 @@ import type {
   RuleInput,
   TaskTemplate,
 } from "@/features/events/store/events-store";
+
+/** Solo Luis puede eliminar eventos por completo (no solo archivarlos). */
+const EVENT_DELETE_PERSON_ID = "luis";
 
 /**
  * Persistencia para el store de eventos: cada función aquí es el reflejo en
@@ -83,6 +87,16 @@ export async function setEventArchived(eventId: string, archived: boolean) {
     .from("events")
     .update({ archived })
     .eq("id", eventId);
+  if (error) throw error;
+}
+
+export async function deleteEvent(eventId: string) {
+  const user = await getCurrentUser();
+  if (user?.id !== EVENT_DELETE_PERSON_ID) {
+    throw new Error("No tienes permiso para eliminar eventos.");
+  }
+  const supabase = createServiceClient();
+  const { error } = await supabase.from("events").delete().eq("id", eventId);
   if (error) throw error;
 }
 
