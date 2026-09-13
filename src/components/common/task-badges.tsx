@@ -1,3 +1,5 @@
+import { AlertCircle } from "lucide-react";
+
 import type { TaskView } from "@/features/tasks/types";
 import { relativeDueLabel } from "@/lib/date";
 import { daysLate, isOverdue } from "@/lib/tasks";
@@ -33,14 +35,22 @@ export function CategoryChip({
  * condicionales de crítica/en curso/hito. Compartida por la fila de lista
  * y la ficha, para que ambas muestren siempre lo mismo.
  */
-export function TaskChips({ view }: { view: TaskView }) {
+export function TaskChips({
+  view,
+  showAssignee = true,
+}: {
+  view: TaskView;
+  /** La tarjeta de tarea (3.5) muestra al responsable en su propia fila, con avatar. */
+  showAssignee?: boolean;
+}) {
   const { task, category, assignee } = view;
   const late = isOverdue(task);
 
   return (
     <>
       {late ? (
-        <span className="rounded-[7px] bg-priority-critical-bg px-[9px] py-[3px] text-xs font-bold text-priority-critical">
+        <span className="inline-flex items-center gap-1 rounded-[7px] bg-priority-critical-bg px-[9px] py-[3px] text-xs font-bold text-priority-critical">
+          <AlertCircle className="size-3.5" />
           {daysLate(task)} {daysLate(task) === 1 ? "día" : "días"} tarde
         </span>
       ) : (
@@ -51,7 +61,7 @@ export function TaskChips({ view }: { view: TaskView }) {
 
       <CategoryChip name={category.name} color={category.color} />
 
-      {assignee && (
+      {assignee && showAssignee && (
         <span
           className="rounded-[7px] border bg-white px-[9px] py-[3px] text-xs font-semibold"
           style={{ borderColor: assignee.color, color: assignee.color }}
