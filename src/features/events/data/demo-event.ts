@@ -37,22 +37,22 @@ export const demoMembers: DemoMember[] = [
     id: "luis",
     name: "Luis",
     role: "Sector técnico: sonido, equipo DJ, montaje, cartelería y archivo de contenido",
-    color: "#3d5566",
-    bgColor: "#e6ebee",
+    color: "#2c6e8f",
+    bgColor: "#e3f0f6",
   },
   {
     id: "oliver",
     name: "Oliver",
     role: "Supervisión y control: coordinación de seguridad, DJs y camareros; pagos al staff y control del dinero de barra",
-    color: "#8a6520",
-    bgColor: "#f7ecd6",
+    color: "#7a2438",
+    bgColor: "#f4e3e7",
   },
   {
     id: "guille",
     name: "Guille",
     role: "Sector comercial y RRPP: contenido, redes, ticketing y coordinación de accesos",
-    color: "#4d6b3f",
-    bgColor: "#e9efe6",
+    color: "#8a6d12",
+    bgColor: "#f7f0d8",
   },
 ];
 
