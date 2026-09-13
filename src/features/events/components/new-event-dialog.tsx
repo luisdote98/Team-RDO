@@ -45,7 +45,7 @@ export function NewEventDialog({
       format: "Por definir",
     });
 
-    toast("Evento creado, todavía sin tareas.");
+    toast("Evento creado con la checklist básica.");
     reset();
     onOpenChange(false);
     router.push(ROUTES.event(id));
@@ -64,7 +64,7 @@ export function NewEventDialog({
           Nuevo evento
         </SheetTitle>
         <SheetDescription className="text-rodeo-ink-soft mt-2 text-sm leading-relaxed">
-          Se crea vacío: después le añades tareas por área.
+          Empieza con una checklist básica por área; la ajustas después.
         </SheetDescription>
 
         <Input

@@ -8,10 +8,11 @@ import {
   useState,
 } from "react";
 
-import type {
-  EventRecord,
-  EventRule,
-  Expense,
+import {
+  createDefaultTasks,
+  type EventRecord,
+  type EventRule,
+  type Expense,
 } from "@/features/events/data/demo-event";
 import type { TaskLike } from "@/lib/tasks";
 import type { TaskPriority, TaskStatus } from "@/types/domain";
@@ -90,7 +91,14 @@ export function EventsStoreProvider({
 
     setEvents((prev) => [
       ...prev,
-      { id, ...input, tasks: [], rules: [], chains: [], expenses: [] },
+      {
+        id,
+        ...input,
+        tasks: createDefaultTasks(id, input.date),
+        rules: [],
+        chains: [],
+        expenses: [],
+      },
     ]);
     return id;
   }, []);

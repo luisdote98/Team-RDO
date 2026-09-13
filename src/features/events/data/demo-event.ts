@@ -633,6 +633,138 @@ const RODEO_SESSIONS_TASKS: RawTask[] = [
   ),
 ];
 
+/**
+ * Checklist base para un evento nuevo: una tarea por área, con el
+ * responsable habitual de esa área, sacada de las de RODEO SESSIONS pero
+ * sin ningún detalle propio de ese evento. `createDefaultTasks()` la
+ * convierte en tareas reales con fecha, para el evento que se está creando.
+ */
+const DEFAULT_EVENT_TASKS: RawTask[] = [
+  raw(
+    -40,
+    "confirmar-lugar",
+    "Confirmar fecha y firmar contrato del lugar",
+    "villa",
+    "oliver",
+    "critical",
+    "pending",
+    { isMilestone: true },
+  ),
+  raw(
+    -35,
+    "cerrar-proveedores",
+    "Cerrar line-up o proveedores principales",
+    "booking",
+    "oliver",
+    "critical",
+    "pending",
+  ),
+  raw(
+    -32,
+    "reservar-sonido",
+    "Reservar equipo de sonido y DJ",
+    "sonido",
+    "luis",
+    "critical",
+    "pending",
+  ),
+  raw(
+    -30,
+    "confirmar-djs",
+    "Confirmar DJs y horario de sets",
+    "dj",
+    "oliver",
+    "high",
+    "pending",
+  ),
+  raw(
+    -29,
+    "definir-precios-entradas",
+    "Definir precios y abrir venta de entradas",
+    "entradas",
+    "guille",
+    "critical",
+    "pending",
+    { isMilestone: true },
+  ),
+  raw(
+    -25,
+    "contratar-seguridad",
+    "Contratar personal de seguridad",
+    "seguridad",
+    "oliver",
+    "critical",
+    "pending",
+  ),
+  raw(
+    -24,
+    "cartel-evento",
+    "Diseñar y publicar cartel del evento",
+    "carteleria",
+    "luis",
+    "high",
+    "pending",
+  ),
+  raw(
+    -22,
+    "presupuesto-barra",
+    "Definir presupuesto y compra de barra",
+    "barra",
+    "oliver",
+    "high",
+    "pending",
+  ),
+  raw(
+    -20,
+    "cerrar-invitados",
+    "Cerrar lista de invitados",
+    "invitados",
+    "guille",
+    "normal",
+    "pending",
+  ),
+  raw(
+    -16,
+    "confirmar-contenido",
+    "Confirmar fotografía y grabación",
+    "contenido",
+    "guille",
+    "normal",
+    "pending",
+  ),
+  raw(
+    -14,
+    "definir-decoracion",
+    "Definir decoración y ambientación",
+    "decoracion",
+    "guille",
+    "normal",
+    "pending",
+  ),
+  raw(
+    3,
+    "cierre-economico-evento",
+    "Cierre económico: ingresos, gastos y reparto",
+    "entradas",
+    "oliver",
+    "critical",
+    "pending",
+  ),
+];
+
+/**
+ * Tareas de arranque de un evento nuevo, con fechas ya calculadas a partir
+ * de la fecha del evento. Los ids llevan el id del evento para que nunca
+ * choquen entre eventos distintos.
+ */
+export function createDefaultTasks(eventId: string, eventDate: Date): TaskLike[] {
+  return DEFAULT_EVENT_TASKS.map((task) => ({
+    ...task,
+    id: `${task.id}-${eventId}`,
+    dueDate: dueDateFor(eventDate, task.offsetDays),
+  }));
+}
+
 const RODEO_SESSIONS_EXPENSES: (Omit<Expense, "date"> & {
   offsetDays: number;
 })[] = [
