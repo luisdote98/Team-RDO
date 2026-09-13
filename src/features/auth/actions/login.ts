@@ -4,9 +4,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { demoMembers } from "@/features/events/data/demo-event";
-import { checkCredentials } from "@/lib/auth/credentials";
+import { verifyPassword } from "@/lib/auth/credentials";
 import { ROUTES } from "@/lib/constants";
-import { SESSION_COOKIE } from "@/lib/auth/session";
+import { SESSION_COOKIE, signSession } from "@/lib/auth/session";
 
 export type LoginState = { error: string | null };
 
@@ -23,12 +23,12 @@ export async function login(
     return { error: "Elige quién eres." };
   }
 
-  if (!checkCredentials(personId, password)) {
+  if (!(await verifyPassword(personId, password))) {
     return { error: "Contraseña incorrecta." };
   }
 
   const store = await cookies();
-  store.set(SESSION_COOKIE, personId, {
+  store.set(SESSION_COOKIE, signSession(personId), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",

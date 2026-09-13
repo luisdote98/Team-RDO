@@ -3,7 +3,7 @@ import { Antonio, Public_Sans } from "next/font/google";
 
 import { Toaster } from "@/components/ui/sonner";
 import { AppBottomNav } from "@/components/layout/app-bottom-nav";
-import { getSeedEvents } from "@/features/events/data/demo-event";
+import { getEvents, getTaskTemplates } from "@/features/events/data/queries";
 import { EventsStoreProvider } from "@/features/events/store/events-store";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/constants";
 
@@ -45,11 +45,16 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [events, taskTemplates] = await Promise.all([
+    getEvents(),
+    getTaskTemplates(),
+  ]);
+
   return (
     <html
       lang="es"
@@ -57,7 +62,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <EventsStoreProvider initialEvents={getSeedEvents()}>
+        <EventsStoreProvider
+          initialEvents={events}
+          initialTaskTemplates={taskTemplates}
+        >
           {children}
           <AppBottomNav />
         </EventsStoreProvider>

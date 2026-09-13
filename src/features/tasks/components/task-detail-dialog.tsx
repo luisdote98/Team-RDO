@@ -33,6 +33,7 @@ export function TaskDetailDialog() {
     updateAssignee,
     updateDueDate,
     toggleDone,
+    deleteTask,
   } = useTaskStore();
   const view = selectedTaskId ? viewById.get(selectedTaskId) : undefined;
 
@@ -69,6 +70,12 @@ export function TaskDetailDialog() {
               }
               toggleDone(task.id);
               selectTask(null);
+            };
+
+            const handleDelete = () => {
+              deleteTask(task.id);
+              selectTask(null);
+              toast("Tarea eliminada.");
             };
 
             return (
@@ -195,6 +202,14 @@ export function TaskDetailDialog() {
                     Cerrar
                   </button>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="text-priority-critical mt-4 min-h-11 w-full text-center text-sm font-semibold"
+                >
+                  Eliminar tarea
+                </button>
               </div>
             );
           })()}

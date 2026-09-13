@@ -44,6 +44,7 @@ type TaskStoreValue = {
    */
   toggleDone: (taskId: string) => void;
   addTask: (input: NewTaskInput) => void;
+  deleteTask: (taskId: string) => void;
   selectedTaskId: string | null;
   selectTask: (taskId: string | null) => void;
   isNewTaskOpen: boolean;
@@ -77,6 +78,7 @@ export function TaskStoreProvider({
     updateTaskAssignee,
     updateTaskDueDate,
     addTask: globalAddTask,
+    deleteTask: globalDeleteTask,
   } = useEventsStore();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isNewTaskOpen, setNewTaskOpen] = useState(false);
@@ -126,6 +128,7 @@ export function TaskStoreProvider({
         updateTaskDueDate(eventId, taskId, dueDate),
       toggleDone,
       addTask: (input) => globalAddTask(eventId, input),
+      deleteTask: (taskId) => globalDeleteTask(eventId, taskId),
       selectedTaskId,
       selectTask: setSelectedTaskId,
       isNewTaskOpen,
@@ -144,6 +147,7 @@ export function TaskStoreProvider({
       updateTaskDueDate,
       toggleDone,
       globalAddTask,
+      globalDeleteTask,
       selectedTaskId,
       isNewTaskOpen,
     ],

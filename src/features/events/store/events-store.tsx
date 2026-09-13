@@ -7,7 +7,9 @@ import {
   useMemo,
   useState,
 } from "react";
+import { toast } from "sonner";
 
+import * as persist from "@/features/events/actions/persistence";
 import {
   createDefaultTasks,
   type EventRecord,
@@ -54,11 +56,23 @@ export type TaskTemplate = {
 };
 export type TaskTemplateInput = Omit<TaskTemplate, "id">;
 
-/** Genera un id local; en la fase 1 lo sustituye la clave primaria de Postgres. */
 function newId(prefix: string): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : `${prefix}-${Date.now()}`;
+}
+
+/** Si `action` falla, revierte el estado optimista a `previous` y avisa. */
+function persistOrRevert(
+  action: Promise<void>,
+  revert: () => void,
+  errorMessage: string,
+) {
+  action.catch((err) => {
+    console.error(err);
+    revert();
+    toast.error(errorMessage);
+  });
 }
 
 type EventsStoreValue = {
@@ -77,6 +91,7 @@ type EventsStoreValue = {
   ) => void;
   updateTaskDueDate: (eventId: string, taskId: string, dueDate: Date) => void;
   addTask: (eventId: string, input: NewTaskInput) => void;
+  deleteTask: (eventId: string, taskId: string) => void;
   addEventRule: (eventId: string, input: RuleInput) => void;
   updateEventRule: (eventId: string, ruleId: string, input: RuleInput) => void;
   addExpense: (eventId: string, input: ExpenseInput) => void;
@@ -88,21 +103,25 @@ type EventsStoreValue = {
 const EventsStoreContext = createContext<EventsStoreValue | null>(null);
 
 /**
- * Fuente de verdad de TODOS los eventos en esta sesión del navegador.
- *
- * PROTOTIPO: vive en memoria de React. Un evento creado aquí (o una tarea
- * añadida a uno) desaparece al recargar la página — todavía no hay Supabase
- * conectado (fase 1). Ningún dato se guarda en localStorage.
+ * Fuente de verdad de todos los eventos, hidratada desde Supabase al cargar
+ * la página (ver src/app/layout.tsx). Cada mutador actualiza el estado local
+ * al instante (UI optimista) y en paralelo guarda el cambio de verdad en la
+ * base de datos vía features/events/actions/persistence; si el guardado
+ * falla, revierte el cambio local y avisa con un toast.
  */
 export function EventsStoreProvider({
   initialEvents,
+  initialTaskTemplates,
   children,
 }: {
   initialEvents: EventRecord[];
+  initialTaskTemplates: TaskTemplate[];
   children: React.ReactNode;
 }) {
   const [events, setEvents] = useState(initialEvents);
-  const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>([]);
+  const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>(
+    initialTaskTemplates,
+  );
 
   const addEvent = useCallback(
     (input: NewEventInput) => {
@@ -120,30 +139,45 @@ export function EventsStoreProvider({
         isMilestone: template.isMilestone,
       }));
 
-      setEvents((prev) => [
-        ...prev,
-        {
-          id,
-          ...input,
-          tasks: [...createDefaultTasks(id, input.date), ...customTasks],
-          rules: [],
-          chains: [],
-          expenses: [],
-        },
-      ]);
+      const tasks = [...createDefaultTasks(id, input.date), ...customTasks];
+      const record: EventRecord = {
+        id,
+        ...input,
+        tasks,
+        rules: [],
+        chains: [],
+        expenses: [],
+      };
+
+      setEvents((prev) => [...prev, record]);
+      persistOrRevert(
+        persist.createEvent({ id, ...input, tasks }),
+        () => setEvents((prev) => prev.filter((e) => e.id !== id)),
+        "No se pudo guardar el evento. Intenta de nuevo.",
+      );
+
       return id;
     },
     [taskTemplates],
   );
 
   const addTaskTemplate = useCallback((input: TaskTemplateInput) => {
-    setTaskTemplates((prev) => [...prev, { id: newId("plantilla"), ...input }]);
+    const template = { id: newId("plantilla"), ...input };
+    setTaskTemplates((prev) => [...prev, template]);
+    persistOrRevert(
+      persist.addTaskTemplate(template),
+      () =>
+        setTaskTemplates((prev) => prev.filter((t) => t.id !== template.id)),
+      "No se pudo guardar la plantilla. Intenta de nuevo.",
+    );
   }, []);
 
   const updateTaskStatus = useCallback(
     (eventId: string, taskId: string, status: TaskStatus) => {
-      setEvents((prev) =>
-        prev.map((event) =>
+      let previous: EventRecord[] = [];
+      setEvents((prev) => {
+        previous = prev;
+        return prev.map((event) =>
           event.id !== eventId
             ? event
             : {
@@ -152,7 +186,12 @@ export function EventsStoreProvider({
                   task.id === taskId ? { ...task, status } : task,
                 ),
               },
-        ),
+        );
+      });
+      persistOrRevert(
+        persist.updateTaskStatus(taskId, status),
+        () => setEvents(previous),
+        "No se pudo guardar el estado de la tarea.",
       );
     },
     [],
@@ -160,8 +199,10 @@ export function EventsStoreProvider({
 
   const updateTaskNotes = useCallback(
     (eventId: string, taskId: string, notes: string) => {
-      setEvents((prev) =>
-        prev.map((event) =>
+      let previous: EventRecord[] = [];
+      setEvents((prev) => {
+        previous = prev;
+        return prev.map((event) =>
           event.id !== eventId
             ? event
             : {
@@ -170,7 +211,12 @@ export function EventsStoreProvider({
                   task.id === taskId ? { ...task, notes } : task,
                 ),
               },
-        ),
+        );
+      });
+      persistOrRevert(
+        persist.updateTaskNotes(taskId, notes),
+        () => setEvents(previous),
+        "No se pudieron guardar las notas.",
       );
     },
     [],
@@ -178,8 +224,10 @@ export function EventsStoreProvider({
 
   const updateTaskAssignee = useCallback(
     (eventId: string, taskId: string, assigneeId: string) => {
-      setEvents((prev) =>
-        prev.map((event) =>
+      let previous: EventRecord[] = [];
+      setEvents((prev) => {
+        previous = prev;
+        return prev.map((event) =>
           event.id !== eventId
             ? event
             : {
@@ -188,7 +236,12 @@ export function EventsStoreProvider({
                   task.id === taskId ? { ...task, assigneeId } : task,
                 ),
               },
-        ),
+        );
+      });
+      persistOrRevert(
+        persist.updateTaskAssignee(taskId, assigneeId),
+        () => setEvents(previous),
+        "No se pudo guardar el responsable.",
       );
     },
     [],
@@ -196,8 +249,10 @@ export function EventsStoreProvider({
 
   const updateTaskDueDate = useCallback(
     (eventId: string, taskId: string, dueDate: Date) => {
-      setEvents((prev) =>
-        prev.map((event) =>
+      let previous: EventRecord[] = [];
+      setEvents((prev) => {
+        previous = prev;
+        return prev.map((event) =>
           event.id !== eventId
             ? event
             : {
@@ -206,7 +261,12 @@ export function EventsStoreProvider({
                   task.id === taskId ? { ...task, dueDate } : task,
                 ),
               },
-        ),
+        );
+      });
+      persistOrRevert(
+        persist.updateTaskDueDate(taskId, dueDate),
+        () => setEvents(previous),
+        "No se pudo guardar la nueva fecha.",
       );
     },
     [],
@@ -233,6 +293,38 @@ export function EventsStoreProvider({
           : { ...event, tasks: [...event.tasks, newTask] },
       ),
     );
+    persistOrRevert(
+      persist.addTask({ ...newTask, eventId }),
+      () =>
+        setEvents((prev) =>
+          prev.map((event) =>
+            event.id !== eventId
+              ? event
+              : {
+                  ...event,
+                  tasks: event.tasks.filter((task) => task.id !== id),
+                },
+          ),
+        ),
+      "No se pudo guardar la tarea. Intenta de nuevo.",
+    );
+  }, []);
+
+  const deleteTask = useCallback((eventId: string, taskId: string) => {
+    let previous: EventRecord[] = [];
+    setEvents((prev) => {
+      previous = prev;
+      return prev.map((event) =>
+        event.id !== eventId
+          ? event
+          : { ...event, tasks: event.tasks.filter((t) => t.id !== taskId) },
+      );
+    });
+    persistOrRevert(
+      persist.deleteTask(taskId),
+      () => setEvents(previous),
+      "No se pudo eliminar la tarea. Intenta de nuevo.",
+    );
   }, []);
 
   const addEventRule = useCallback((eventId: string, input: RuleInput) => {
@@ -244,12 +336,29 @@ export function EventsStoreProvider({
           : { ...event, rules: [...event.rules, rule] },
       ),
     );
+    persistOrRevert(
+      persist.addEventRule(eventId, rule),
+      () =>
+        setEvents((prev) =>
+          prev.map((event) =>
+            event.id !== eventId
+              ? event
+              : {
+                  ...event,
+                  rules: event.rules.filter((r) => r.id !== rule.id),
+                },
+          ),
+        ),
+      "No se pudo guardar la norma. Intenta de nuevo.",
+    );
   }, []);
 
   const updateEventRule = useCallback(
     (eventId: string, ruleId: string, input: RuleInput) => {
-      setEvents((prev) =>
-        prev.map((event) =>
+      let previous: EventRecord[] = [];
+      setEvents((prev) => {
+        previous = prev;
+        return prev.map((event) =>
           event.id !== eventId
             ? event
             : {
@@ -258,7 +367,12 @@ export function EventsStoreProvider({
                   rule.id === ruleId ? { ...rule, ...input } : rule,
                 ),
               },
-        ),
+        );
+      });
+      persistOrRevert(
+        persist.updateEventRule(ruleId, input),
+        () => setEvents(previous),
+        "No se pudo guardar la norma. Intenta de nuevo.",
       );
     },
     [],
@@ -273,29 +387,58 @@ export function EventsStoreProvider({
           : { ...event, expenses: [...event.expenses, expense] },
       ),
     );
+    persistOrRevert(
+      persist.addExpense(eventId, expense),
+      () =>
+        setEvents((prev) =>
+          prev.map((event) =>
+            event.id !== eventId
+              ? event
+              : {
+                  ...event,
+                  expenses: event.expenses.filter((e) => e.id !== expense.id),
+                },
+          ),
+        ),
+      "No se pudo guardar el gasto. Intenta de nuevo.",
+    );
   }, []);
 
   const deleteExpense = useCallback(
     (eventId: string, expenseId: string) => {
-      setEvents((prev) =>
-        prev.map((event) =>
+      let previous: EventRecord[] = [];
+      setEvents((prev) => {
+        previous = prev;
+        return prev.map((event) =>
           event.id !== eventId
             ? event
             : {
                 ...event,
                 expenses: event.expenses.filter((e) => e.id !== expenseId),
               },
-        ),
+        );
+      });
+      persistOrRevert(
+        persist.deleteExpense(expenseId),
+        () => setEvents(previous),
+        "No se pudo eliminar el gasto. Intenta de nuevo.",
       );
     },
     [],
   );
 
   const setEventArchived = useCallback((eventId: string, archived: boolean) => {
-    setEvents((prev) =>
-      prev.map((event) =>
+    let previous: EventRecord[] = [];
+    setEvents((prev) => {
+      previous = prev;
+      return prev.map((event) =>
         event.id !== eventId ? event : { ...event, archived },
-      ),
+      );
+    });
+    persistOrRevert(
+      persist.setEventArchived(eventId, archived),
+      () => setEvents(previous),
+      "No se pudo guardar el cambio. Intenta de nuevo.",
     );
   }, []);
 
@@ -308,6 +451,7 @@ export function EventsStoreProvider({
       updateTaskAssignee,
       updateTaskDueDate,
       addTask,
+      deleteTask,
       addEventRule,
       updateEventRule,
       addExpense,
@@ -323,6 +467,7 @@ export function EventsStoreProvider({
       updateTaskAssignee,
       updateTaskDueDate,
       addTask,
+      deleteTask,
       addEventRule,
       updateEventRule,
       addExpense,
