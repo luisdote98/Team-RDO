@@ -22,12 +22,22 @@ export function TaskCard({
   /** Solo se usa en vistas que cruzan varios eventos, como "Mis tareas". */
   eventName?: string;
 }) {
-  const { task, waitingFor } = view;
+  const { task, waitingFor, assignee } = view;
   const done = task.status === "completed";
   const blocked = task.status === "blocked";
 
   return (
-    <article className="flex gap-[14px] rounded-[14px] border border-rodeo-card-line bg-card p-4 shadow-[0_1px_2px_rgba(27,23,18,0.04)]">
+    <article
+      className="flex gap-[14px] rounded-[14px] border border-l-4 border-rodeo-card-line bg-card p-4 shadow-[0_1px_2px_rgba(27,23,18,0.04)]"
+      style={
+        assignee
+          ? {
+              backgroundColor: assignee.bgColor,
+              borderLeftColor: assignee.color,
+            }
+          : undefined
+      }
+    >
       <CompletionCircle
         status={task.status}
         title={task.title}
@@ -100,8 +110,10 @@ export function TaskCard({
 }
 
 /**
- * Círculo de completar: 27×27 visual, dentro de un botón con área táctil
- * real de 44×44 (el `before:` absoluto no participa del layout en flex).
+ * Botón de completar: un check verde, siempre visible, para que se entienda
+ * a simple vista que sirve para marcar la tarea como hecha. 27×27 visual,
+ * dentro de un botón con área táctil real de 44×44 (el `before:` absoluto
+ * no participa del layout en flex).
  */
 function CompletionCircle({
   status,
@@ -122,15 +134,21 @@ function CompletionCircle({
         event.stopPropagation();
         onToggle?.();
       }}
-      aria-label={`Marcar «${title}» como hecha`}
+      aria-label={done ? `Reabrir «${title}»` : `Completar «${title}»`}
+      title={done ? "Reabrir tarea" : "Completar tarea"}
       className={cn(
         "relative mt-[1px] flex size-[27px] shrink-0 items-center justify-center rounded-full before:absolute before:-inset-[8.5px] before:content-['']",
         done && "border-2 border-state-completed bg-state-completed",
         blocked && !done && "border-2 border-dashed border-[#cdbba4] bg-white",
-        !done && !blocked && "border-2 border-[#cdc2ae] bg-white",
+        !done &&
+          !blocked &&
+          "border-2 border-state-completed bg-state-completed-bg",
       )}
     >
       {done && <Check className="size-3.5 text-white" strokeWidth={3} />}
+      {!done && !blocked && (
+        <Check className="size-3.5 text-state-completed" strokeWidth={3} />
+      )}
       {blocked && (
         <Lock className="size-3 text-priority-critical" strokeWidth={2.5} />
       )}

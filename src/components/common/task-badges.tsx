@@ -53,8 +53,8 @@ export function TaskChips({ view }: { view: TaskView }) {
 
       {assignee && (
         <span
-          className="rounded-[7px] px-[9px] py-[3px] text-xs font-semibold"
-          style={{ backgroundColor: assignee.bgColor, color: assignee.color }}
+          className="rounded-[7px] border bg-white px-[9px] py-[3px] text-xs font-semibold"
+          style={{ borderColor: assignee.color, color: assignee.color }}
         >
           {assignee.name}
         </span>
