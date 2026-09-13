@@ -11,10 +11,8 @@ import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { useEventsStore } from "@/features/events/store/events-store";
 import { useTaskStore } from "@/features/tasks/store/task-store";
 import { TASK_PRIORITY_META } from "@/lib/constants";
-import { daysFromToday, today } from "@/lib/date";
+import { daysFromToday, toInputDate, today } from "@/lib/date";
 import { TASK_PRIORITIES, type TaskPriority } from "@/types/domain";
-
-const toInputDate = (date: Date) => date.toISOString().slice(0, 10);
 
 export function NewTaskDialog({
   eventId,

@@ -45,3 +45,13 @@ export function relativeDueLabel(date: Date): string {
   if (days === 1) return "Mañana";
   return format(date, "eee d MMM", { locale: es });
 }
+
+/**
+ * Fecha en formato yyyy-MM-dd para un `<input type="date">`, en la fecha
+ * LOCAL del `Date` (no en UTC). `date.toISOString().slice(0, 10)` se
+ * adelanta un día en cualquier huso horario por delante de UTC, como
+ * España — por eso este helper usa los componentes locales.
+ */
+export function toInputDate(date: Date): string {
+  return format(date, "yyyy-MM-dd");
+}

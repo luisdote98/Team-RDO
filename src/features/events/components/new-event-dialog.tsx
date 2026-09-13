@@ -10,9 +10,7 @@ import { Input } from "@/components/ui/input";
 import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { useEventsStore } from "@/features/events/store/events-store";
 import { ROUTES } from "@/lib/constants";
-import { today } from "@/lib/date";
-
-const toInputDate = (date: Date) => date.toISOString().slice(0, 10);
+import { toInputDate, today } from "@/lib/date";
 
 export function NewEventDialog({
   open,

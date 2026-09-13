@@ -10,9 +10,7 @@ import type {
   DemoMember,
 } from "@/features/events/data/demo-event";
 import type { ExpenseInput } from "@/features/events/store/events-store";
-import { today } from "@/lib/date";
-
-const toInputDate = (date: Date) => date.toISOString().slice(0, 10);
+import { toInputDate, today } from "@/lib/date";
 
 export function ExpenseDialog({
   open,

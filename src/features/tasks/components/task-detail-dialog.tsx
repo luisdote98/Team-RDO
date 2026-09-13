@@ -9,7 +9,7 @@ import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { useTaskStore } from "@/features/tasks/store/task-store";
 import { TASK_PRIORITY_META, TASK_STATUS_META } from "@/lib/constants";
-import { relativeDueLabel } from "@/lib/date";
+import { relativeDueLabel, toInputDate } from "@/lib/date";
 import { unblocks } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
 import type { TaskStatus } from "@/types/domain";
@@ -31,6 +31,7 @@ export function TaskDetailDialog() {
     updateStatus,
     updateNotes,
     updateAssignee,
+    updateDueDate,
     toggleDone,
   } = useTaskStore();
   const view = selectedTaskId ? viewById.get(selectedTaskId) : undefined;
@@ -134,6 +135,20 @@ export function TaskDetailDialog() {
                     />
                   ))}
                 </div>
+
+                <p className="rodeo-eyebrow mt-[22px] mb-2.5">Fecha límite</p>
+                <input
+                  type="date"
+                  value={toInputDate(task.dueDate)}
+                  onChange={(event) => {
+                    if (!event.target.value) return;
+                    updateDueDate(
+                      task.id,
+                      new Date(`${event.target.value}T00:00:00`),
+                    );
+                  }}
+                  className="border-rodeo-line w-full rounded-[14px] border bg-white px-[15px] py-[15px] text-base"
+                />
 
                 <p className="rodeo-eyebrow mt-[22px] mb-2.5">Notas</p>
                 <Textarea
