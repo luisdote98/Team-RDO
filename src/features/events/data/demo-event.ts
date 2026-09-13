@@ -104,6 +104,8 @@ export type EventRecord = {
   rules: EventRule[];
   chains: EventChain[];
   expenses: Expense[];
+  /** true cuando el evento se archiva: sigue accesible, pero fuera de las vistas activas. */
+  archived?: boolean;
 };
 
 /**

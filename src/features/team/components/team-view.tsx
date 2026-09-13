@@ -8,7 +8,9 @@ import { isClosed, isOverdue } from "@/lib/tasks";
 
 export function TeamView() {
   const { events } = useEventsStore();
-  const allTasks = events.flatMap((event) => event.tasks);
+  const allTasks = events
+    .filter((event) => !event.archived)
+    .flatMap((event) => event.tasks);
 
   const rows = demoMembers.map((member) => {
     const open = allTasks.filter(

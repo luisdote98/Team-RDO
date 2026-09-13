@@ -64,6 +64,7 @@ type EventsStoreValue = {
   updateEventRule: (eventId: string, ruleId: string, input: RuleInput) => void;
   addExpense: (eventId: string, input: ExpenseInput) => void;
   deleteExpense: (eventId: string, expenseId: string) => void;
+  setEventArchived: (eventId: string, archived: boolean) => void;
 };
 
 const EventsStoreContext = createContext<EventsStoreValue | null>(null);
@@ -245,6 +246,14 @@ export function EventsStoreProvider({
     [],
   );
 
+  const setEventArchived = useCallback((eventId: string, archived: boolean) => {
+    setEvents((prev) =>
+      prev.map((event) =>
+        event.id !== eventId ? event : { ...event, archived },
+      ),
+    );
+  }, []);
+
   const value = useMemo<EventsStoreValue>(
     () => ({
       events,
@@ -258,6 +267,7 @@ export function EventsStoreProvider({
       updateEventRule,
       addExpense,
       deleteExpense,
+      setEventArchived,
     }),
     [
       events,
@@ -271,6 +281,7 @@ export function EventsStoreProvider({
       updateEventRule,
       addExpense,
       deleteExpense,
+      setEventArchived,
     ],
   );
 

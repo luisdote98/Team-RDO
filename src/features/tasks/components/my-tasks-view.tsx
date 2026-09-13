@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { demoCategories, demoMembers } from "@/features/events/data/demo-event";
 import { useEventsStore } from "@/features/events/store/events-store";
 import { SwipeableTaskRow } from "@/features/tasks/components/swipeable-task-row";
@@ -22,6 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const TEAM = "equipo";
+const ALL_EVENTS = "todos";
 
 type Row = { eventId: string; eventName: string; view: TaskView };
 
@@ -46,11 +54,17 @@ export function MyTasksView({
   const router = useRouter();
   const { events, updateTaskStatus, updateTaskDueDate } = useEventsStore();
   const [personId, setPersonId] = useState(userId);
+  const [eventFilter, setEventFilter] = useState(ALL_EVENTS);
   const [showDone, setShowDone] = useState(false);
+
+  const activeEvents = useMemo(
+    () => events.filter((event) => !event.archived),
+    [events],
+  );
 
   const allRows = useMemo(() => {
     const rows: Row[] = [];
-    for (const event of events) {
+    for (const event of activeEvents) {
       const tasks = applyBlocking(event.tasks);
       const views = toTaskViews(tasks, demoCategories, demoMembers);
       for (const view of views) {
@@ -58,15 +72,18 @@ export function MyTasksView({
       }
     }
     return rows;
-  }, [events]);
+  }, [activeEvents]);
 
-  const rows = useMemo(
-    () =>
-      personId === TEAM
-        ? allRows
-        : allRows.filter((row) => row.view.task.assigneeId === personId),
-    [allRows, personId],
-  );
+  const rows = useMemo(() => {
+    let list = allRows;
+    if (personId !== TEAM) {
+      list = list.filter((row) => row.view.task.assigneeId === personId);
+    }
+    if (eventFilter !== ALL_EVENTS) {
+      list = list.filter((row) => row.eventId === eventFilter);
+    }
+    return list;
+  }, [allRows, personId, eventFilter]);
 
   const rowByTask = useMemo(
     () => new Map<TaskLike, Row>(rows.map((row) => [row.view.task, row])),
@@ -87,11 +104,11 @@ export function MyTasksView({
 
   const nextEvent = useMemo(
     () =>
-      events
+      activeEvents
         .map((event) => ({ event, days: daysFromToday(event.date) }))
         .filter((entry) => entry.days >= 0)
         .sort((a, b) => a.days - b.days)[0],
-    [events],
+    [activeEvents],
   );
 
   const heading =
@@ -178,6 +195,24 @@ export function MyTasksView({
           );
         })}
       </div>
+
+      {activeEvents.length > 1 && (
+        <div className="mx-5 mt-2.5">
+          <Select value={eventFilter} onValueChange={setEventFilter}>
+            <SelectTrigger className="border-rodeo-line bg-card text-rodeo-ink-soft h-auto w-fit gap-1.5 rounded-full px-3.5 py-2 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_EVENTS}>Todos los eventos</SelectItem>
+              {activeEvents.map((event) => (
+                <SelectItem key={event.id} value={event.id}>
+                  {event.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className="mt-2 flex flex-col">
         {(["late", "week", "later"] as const).map((key) => {
