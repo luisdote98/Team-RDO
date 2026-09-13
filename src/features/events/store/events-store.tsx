@@ -14,6 +14,7 @@ import {
   type EventRule,
   type Expense,
 } from "@/features/events/data/demo-event";
+import { dueDateFor } from "@/lib/date";
 import type { TaskLike } from "@/lib/tasks";
 import type { TaskPriority, TaskStatus } from "@/types/domain";
 
@@ -37,6 +38,21 @@ export type NewTaskInput = {
 
 export type RuleInput = Omit<EventRule, "id">;
 export type ExpenseInput = Omit<Expense, "id">;
+
+/**
+ * Tarea guardada por el usuario para que salga siempre en los eventos
+ * nuevos, además de la checklist básica de fábrica.
+ */
+export type TaskTemplate = {
+  id: string;
+  title: string;
+  categoryId: string;
+  assigneeId: string;
+  priority: TaskPriority;
+  offsetDays: number;
+  isMilestone?: boolean;
+};
+export type TaskTemplateInput = Omit<TaskTemplate, "id">;
 
 /** Genera un id local; en la fase 1 lo sustituye la clave primaria de Postgres. */
 function newId(prefix: string): string {
@@ -66,6 +82,7 @@ type EventsStoreValue = {
   addExpense: (eventId: string, input: ExpenseInput) => void;
   deleteExpense: (eventId: string, expenseId: string) => void;
   setEventArchived: (eventId: string, archived: boolean) => void;
+  addTaskTemplate: (input: TaskTemplateInput) => void;
 };
 
 const EventsStoreContext = createContext<EventsStoreValue | null>(null);
@@ -85,22 +102,42 @@ export function EventsStoreProvider({
   children: React.ReactNode;
 }) {
   const [events, setEvents] = useState(initialEvents);
+  const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>([]);
 
-  const addEvent = useCallback((input: NewEventInput) => {
-    const id = newId("evento");
+  const addEvent = useCallback(
+    (input: NewEventInput) => {
+      const id = newId("evento");
 
-    setEvents((prev) => [
-      ...prev,
-      {
-        id,
-        ...input,
-        tasks: createDefaultTasks(id, input.date),
-        rules: [],
-        chains: [],
-        expenses: [],
-      },
-    ]);
-    return id;
+      const customTasks: TaskLike[] = taskTemplates.map((template) => ({
+        id: `${template.id}-${id}`,
+        title: template.title,
+        categoryId: template.categoryId,
+        assigneeId: template.assigneeId,
+        priority: template.priority,
+        status: "pending",
+        offsetDays: template.offsetDays,
+        dueDate: dueDateFor(input.date, template.offsetDays),
+        isMilestone: template.isMilestone,
+      }));
+
+      setEvents((prev) => [
+        ...prev,
+        {
+          id,
+          ...input,
+          tasks: [...createDefaultTasks(id, input.date), ...customTasks],
+          rules: [],
+          chains: [],
+          expenses: [],
+        },
+      ]);
+      return id;
+    },
+    [taskTemplates],
+  );
+
+  const addTaskTemplate = useCallback((input: TaskTemplateInput) => {
+    setTaskTemplates((prev) => [...prev, { id: newId("plantilla"), ...input }]);
   }, []);
 
   const updateTaskStatus = useCallback(
@@ -276,6 +313,7 @@ export function EventsStoreProvider({
       addExpense,
       deleteExpense,
       setEventArchived,
+      addTaskTemplate,
     }),
     [
       events,
@@ -290,6 +328,7 @@ export function EventsStoreProvider({
       addExpense,
       deleteExpense,
       setEventArchived,
+      addTaskTemplate,
     ],
   );
 

@@ -8,6 +8,7 @@ import { BottomSheet } from "@/components/common/bottom-sheet";
 import { PillButton } from "@/components/common/pill-button";
 import { Input } from "@/components/ui/input";
 import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { useEventsStore } from "@/features/events/store/events-store";
 import { useTaskStore } from "@/features/tasks/store/task-store";
 import { TASK_PRIORITY_META } from "@/lib/constants";
 import { daysFromToday, today } from "@/lib/date";
@@ -28,12 +29,14 @@ export function NewTaskDialog({
 }) {
   const { categories, people, addTask, isNewTaskOpen, setNewTaskOpen } =
     useTaskStore();
+  const { addTaskTemplate } = useEventsStore();
 
   const [title, setTitle] = useState("");
   const [assigneeId, setAssigneeId] = useState(currentUserId);
   const [priority, setPriority] = useState<TaskPriority>("high");
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [dueDate, setDueDate] = useState(toInputDate(today()));
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
 
   const reset = () => {
     setTitle("");
@@ -41,6 +44,7 @@ export function NewTaskDialog({
     setPriority("high");
     setCategoryId(categories[0]?.id ?? "");
     setDueDate(toInputDate(today()));
+    setSaveAsTemplate(false);
   };
 
   const days = daysFromToday(eventDate);
@@ -51,6 +55,7 @@ export function NewTaskDialog({
     const trimmed = title.trim();
     if (!trimmed || !dueDate) return;
     const parsedDate = new Date(`${dueDate}T00:00:00`);
+    const offsetDays = differenceInCalendarDays(parsedDate, eventDate);
 
     addTask({
       title: trimmed,
@@ -58,11 +63,19 @@ export function NewTaskDialog({
       assigneeId,
       priority,
       dueDate: parsedDate,
-      offsetDays: differenceInCalendarDays(parsedDate, eventDate),
+      offsetDays,
     });
 
+    if (saveAsTemplate) {
+      addTaskTemplate({ title: trimmed, categoryId, assigneeId, priority, offsetDays });
+    }
+
     const assigneeName = people.find((p) => p.id === assigneeId)?.name ?? "";
-    toast(`Tarea creada para ${assigneeName}.`);
+    toast(
+      saveAsTemplate
+        ? `Tarea creada para ${assigneeName} y guardada como predefinida.`
+        : `Tarea creada para ${assigneeName}.`,
+    );
     reset();
     setNewTaskOpen(false);
   };
@@ -138,6 +151,13 @@ export function NewTaskDialog({
           value={dueDate}
           onChange={(event) => setDueDate(event.target.value)}
           className="border-rodeo-line w-full rounded-[14px] border bg-white px-[15px] py-[15px] text-base"
+        />
+
+        <p className="rodeo-eyebrow mt-5 mb-2.5">Repetir en eventos nuevos</p>
+        <PillButton
+          label="Guardar como predefinida"
+          active={saveAsTemplate}
+          onClick={() => setSaveAsTemplate((v) => !v)}
         />
 
         <div className="mt-[26px] flex gap-2.5">

@@ -80,7 +80,7 @@ export function BottomSheet({
           type="button"
           onClick={() => onOpenChange(false)}
           aria-label="Cerrar"
-          className="text-rodeo-ink-soft hover:bg-rodeo-chip absolute top-2.5 right-3 flex size-9 items-center justify-center rounded-full"
+          className="text-rodeo-ink-soft hover:bg-rodeo-chip absolute top-2.5 right-3 z-20 flex size-9 items-center justify-center rounded-full"
         >
           <X className="size-4" strokeWidth={2.5} />
         </button>
