@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import {
   Select,
   SelectContent,
@@ -52,10 +53,15 @@ export function MyTasksView({
   sessionSlot?: React.ReactNode;
 }) {
   const router = useRouter();
-  const { events, updateTaskStatus, updateTaskDueDate } = useEventsStore();
+  const { events, updateTaskStatus, updateTaskDueDate, deleteTask } =
+    useEventsStore();
   const [personId, setPersonId] = useState(userId);
   const [eventFilter, setEventFilter] = useState(ALL_EVENTS);
   const [showDone, setShowDone] = useState(false);
+  const [rowPendingDelete, setRowPendingDelete] = useState<Row | null>(null);
+  const [rowPendingComplete, setRowPendingComplete] = useState<Row | null>(
+    null,
+  );
 
   const activeEvents = useMemo(
     () => events.filter((event) => !event.archived),
@@ -147,6 +153,16 @@ export function MyTasksView({
     toast(result.message);
   };
 
+  /** Pide confirmación solo cuando se va a completar; reabrir o tocar una bloqueada no la necesita. */
+  const requestComplete = (row: Row) => {
+    const { task } = row.view;
+    if (task.status === "completed" || task.status === "blocked") {
+      handleToggleDone(row.eventId, task.id);
+      return;
+    }
+    setRowPendingComplete(row);
+  };
+
   const goToRow = (row: Row) =>
     router.push(
       `${ROUTES.eventTasks(row.eventId)}?assignee=${row.view.task.assigneeId}`,
@@ -199,7 +215,7 @@ export function MyTasksView({
       {activeEvents.length > 1 && (
         <div className="mx-5 mt-2.5">
           <Select value={eventFilter} onValueChange={setEventFilter}>
-            <SelectTrigger className="border-rodeo-line bg-card text-rodeo-ink-soft h-auto w-fit gap-1.5 rounded-full px-3.5 py-2 text-sm">
+            <SelectTrigger className="h-auto w-fit gap-1.5 rounded-full border-rodeo-line bg-card px-3.5 py-2 text-sm text-rodeo-ink-soft">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -246,7 +262,7 @@ export function MyTasksView({
                     <SwipeableTaskRow
                       key={`${row.eventId}-${task.id}`}
                       blocked={task.status === "blocked"}
-                      onComplete={() => handleToggleDone(row.eventId, task.id)}
+                      onComplete={() => requestComplete(row)}
                       onPostpone={() =>
                         updateTaskDueDate(
                           row.eventId,
@@ -262,9 +278,8 @@ export function MyTasksView({
                         view={row.view}
                         eventName={row.eventName}
                         onClick={() => goToRow(row)}
-                        onToggleDone={() =>
-                          handleToggleDone(row.eventId, task.id)
-                        }
+                        onToggleDone={() => requestComplete(row)}
+                        onDelete={() => setRowPendingDelete(row)}
                       />
                     </SwipeableTaskRow>
                   );
@@ -318,6 +333,46 @@ export function MyTasksView({
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={Boolean(rowPendingDelete)}
+        onOpenChange={(open) => {
+          if (!open) setRowPendingDelete(null);
+        }}
+        title="Eliminar tarea"
+        description={
+          rowPendingDelete
+            ? `¿Seguro que quieres eliminar «${rowPendingDelete.view.task.title}»? No se puede deshacer.`
+            : ""
+        }
+        onConfirm={() => {
+          if (!rowPendingDelete) return;
+          deleteTask(rowPendingDelete.eventId, rowPendingDelete.view.task.id);
+          toast("Tarea eliminada.");
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(rowPendingComplete)}
+        onOpenChange={(open) => {
+          if (!open) setRowPendingComplete(null);
+        }}
+        title="Marcar como hecha"
+        description={
+          rowPendingComplete
+            ? `¿Confirmas que «${rowPendingComplete.view.task.title}» está terminada?`
+            : ""
+        }
+        confirmLabel="Marcar hecha"
+        variant="default"
+        onConfirm={() => {
+          if (!rowPendingComplete) return;
+          handleToggleDone(
+            rowPendingComplete.eventId,
+            rowPendingComplete.view.task.id,
+          );
+        }}
+      />
     </main>
   );
 }

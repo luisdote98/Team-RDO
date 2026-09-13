@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { BottomSheet } from "@/components/common/bottom-sheet";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { PillButton } from "@/components/common/pill-button";
 import { TaskChips } from "@/components/common/task-badges";
 import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
@@ -36,15 +38,31 @@ export function TaskDetailDialog() {
     deleteTask,
   } = useTaskStore();
   const view = selectedTaskId ? viewById.get(selectedTaskId) : undefined;
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [confirmCompleteOpen, setConfirmCompleteOpen] = useState(false);
+
+  const confirmDelete = () => {
+    if (!view) return;
+    deleteTask(view.task.id);
+    selectTask(null);
+    toast("Tarea eliminada.");
+  };
+
+  const confirmComplete = () => {
+    if (!view) return;
+    toggleDone(view.task.id);
+    selectTask(null);
+  };
 
   return (
-    <BottomSheet
-      open={Boolean(view)}
-      onOpenChange={(open) => {
-        if (!open) selectTask(null);
-      }}
-    >
-      {view &&
+    <>
+      <BottomSheet
+        open={Boolean(view)}
+        onOpenChange={(open) => {
+          if (!open) selectTask(null);
+        }}
+      >
+        {view &&
           (() => {
             const { task, category, waitingFor } = view;
             const blocked = task.status === "blocked";
@@ -57,7 +75,7 @@ export function TaskDetailDialog() {
                 return;
               }
               if (status === "completed") {
-                if (!done) toggleDone(task.id);
+                if (!done) setConfirmCompleteOpen(true);
                 return;
               }
               updateStatus(task.id, status);
@@ -68,15 +86,15 @@ export function TaskDetailDialog() {
                 toast(`Bloqueada: primero «${waitingFor[0]}».`);
                 return;
               }
-              toggleDone(task.id);
-              selectTask(null);
+              if (done) {
+                toggleDone(task.id);
+                selectTask(null);
+                return;
+              }
+              setConfirmCompleteOpen(true);
             };
 
-            const handleDelete = () => {
-              deleteTask(task.id);
-              selectTask(null);
-              toast("Tarea eliminada.");
-            };
+            const handleDelete = () => setConfirmDeleteOpen(true);
 
             return (
               <div className="px-5 pt-1 pb-7">
@@ -89,20 +107,20 @@ export function TaskDetailDialog() {
                   <TaskChips view={view} />
                 </div>
 
-                <h2 className="font-display mt-3.5 text-[27px] leading-[1.15] font-medium">
+                <h2 className="mt-3.5 font-display text-[27px] leading-[1.15] font-medium">
                   {task.title}
                 </h2>
-                <p className="text-rodeo-ink-soft mt-2.5 text-sm">
+                <p className="mt-2.5 text-sm text-rodeo-ink-soft">
                   {TASK_PRIORITY_META[task.priority].label} ·{" "}
                   {relativeDueLabel(task.dueDate)} · {category.name}
                 </p>
 
                 {blocked && (
-                  <div className="bg-priority-critical-bg mt-4 rounded-[14px] p-4">
-                    <p className="text-priority-critical text-[13px] font-bold tracking-[0.06em] uppercase">
+                  <div className="mt-4 rounded-[14px] bg-priority-critical-bg p-4">
+                    <p className="text-[13px] font-bold tracking-[0.06em] text-priority-critical uppercase">
                       Bloqueada automáticamente
                     </p>
-                    <p className="text-priority-critical mt-2 text-sm leading-relaxed">
+                    <p className="mt-2 text-sm leading-relaxed text-priority-critical">
                       Espera a: {waitingFor.join(", ")}. Se desbloquea sola al
                       completarla.
                     </p>
@@ -117,14 +135,16 @@ export function TaskDetailDialog() {
                       label={TASK_STATUS_META[status].label}
                       active={task.status === status}
                       activeClassName={
-                        status === "completed" ? "bg-state-completed" : undefined
+                        status === "completed"
+                          ? "bg-state-completed"
+                          : undefined
                       }
                       onClick={() => handleStatusClick(status)}
                     />
                   ))}
                 </div>
                 {blocked && (
-                  <p className="text-priority-critical mt-2.5 text-[13px] leading-normal">
+                  <p className="mt-2.5 text-[13px] leading-normal text-priority-critical">
                     No se puede cambiar mientras esté bloqueada: primero
                     completa la dependencia.
                   </p>
@@ -154,7 +174,7 @@ export function TaskDetailDialog() {
                       new Date(`${event.target.value}T00:00:00`),
                     );
                   }}
-                  className="border-rodeo-line w-full rounded-[14px] border bg-white px-[15px] py-[15px] text-base"
+                  className="w-full rounded-[14px] border border-rodeo-line bg-white px-[15px] py-[15px] text-base"
                 />
 
                 <p className="rodeo-eyebrow mt-[22px] mb-2.5">Notas</p>
@@ -163,12 +183,12 @@ export function TaskDetailDialog() {
                   defaultValue={task.notes ?? ""}
                   placeholder="Añade contexto para el equipo"
                   onChange={(event) => updateNotes(task.id, event.target.value)}
-                  className="border-rodeo-line min-h-[92px] resize-y rounded-[14px] bg-white text-[15px]"
+                  className="min-h-[92px] resize-y rounded-[14px] border-rodeo-line bg-white text-[15px]"
                 />
 
                 {freed.length > 0 && (
                   <div className="mt-5 rounded-[14px] bg-[#f3efe6] p-4">
-                    <p className="text-rodeo-ink-soft text-[13px] font-bold tracking-[0.06em] uppercase">
+                    <p className="text-[13px] font-bold tracking-[0.06em] text-rodeo-ink-soft uppercase">
                       Al completarla se libera
                     </p>
                     <div className="mt-2.5 flex flex-col gap-1.5">
@@ -192,12 +212,16 @@ export function TaskDetailDialog() {
                       !done && !blocked && "bg-state-completed",
                     )}
                   >
-                    {done ? "Reabrir tarea" : blocked ? "Bloqueada" : "Marcar hecha"}
+                    {done
+                      ? "Reabrir tarea"
+                      : blocked
+                        ? "Bloqueada"
+                        : "Marcar hecha"}
                   </button>
                   <button
                     type="button"
                     onClick={() => selectTask(null)}
-                    className="text-rodeo-ink-soft rounded-[14px] border border-[#d8cfbd] px-5 py-[15px] text-base font-semibold"
+                    className="rounded-[14px] border border-[#d8cfbd] px-5 py-[15px] text-base font-semibold text-rodeo-ink-soft"
                   >
                     Cerrar
                   </button>
@@ -206,13 +230,38 @@ export function TaskDetailDialog() {
                 <button
                   type="button"
                   onClick={handleDelete}
-                  className="text-priority-critical mt-4 min-h-11 w-full text-center text-sm font-semibold"
+                  className="mt-4 min-h-11 w-full text-center text-sm font-semibold text-priority-critical"
                 >
                   Eliminar tarea
                 </button>
               </div>
             );
           })()}
-    </BottomSheet>
+      </BottomSheet>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Eliminar tarea"
+        description={
+          view
+            ? `¿Seguro que quieres eliminar «${view.task.title}»? No se puede deshacer.`
+            : ""
+        }
+        onConfirm={confirmDelete}
+      />
+
+      <ConfirmDialog
+        open={confirmCompleteOpen}
+        onOpenChange={setConfirmCompleteOpen}
+        title="Marcar como hecha"
+        description={
+          view ? `¿Confirmas que «${view.task.title}» está terminada?` : ""
+        }
+        confirmLabel="Marcar hecha"
+        variant="default"
+        onConfirm={confirmComplete}
+      />
+    </>
   );
 }

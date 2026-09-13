@@ -3,7 +3,9 @@
 import { addDays } from "date-fns";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import {
   Select,
   SelectContent,
@@ -15,15 +17,16 @@ import { SwipeableTaskRow } from "@/features/tasks/components/swipeable-task-row
 import { TaskCard } from "@/features/tasks/components/task-card";
 import { useTaskStore } from "@/features/tasks/store/task-store";
 import { ROUTES } from "@/lib/constants";
-import { groupByUrgency, isClosed, isOverdue, type TaskLike } from "@/lib/tasks";
+import {
+  groupByUrgency,
+  isClosed,
+  isOverdue,
+  type TaskLike,
+} from "@/lib/tasks";
 import { cn } from "@/lib/utils";
 
 export type TaskFilterValue =
-  | "todas"
-  | "atrasadas"
-  | "bloqueadas"
-  | "mias"
-  | "hechas";
+  "todas" | "atrasadas" | "bloqueadas" | "mias" | "hechas";
 
 const ALL_PEOPLE = "todas";
 
@@ -42,12 +45,33 @@ export function TaskBoard({
   initialCategory,
   initialFilter,
 }: TaskBoardProps) {
-  const { views, categories, people, toggleDone, selectTask, updateDueDate } =
-    useTaskStore();
+  const {
+    views,
+    categories,
+    people,
+    toggleDone,
+    selectTask,
+    updateDueDate,
+    deleteTask,
+  } = useTaskStore();
   const [filter, setFilter] = useState<TaskFilterValue>(
     initialFilter ?? "todas",
   );
   const [personId, setPersonId] = useState(initialAssignee ?? ALL_PEOPLE);
+  const [taskPendingDelete, setTaskPendingDelete] = useState<TaskLike | null>(
+    null,
+  );
+  const [taskPendingComplete, setTaskPendingComplete] =
+    useState<TaskLike | null>(null);
+
+  /** Pide confirmación solo cuando se va a completar; reabrir o tocar una bloqueada no la necesita. */
+  const requestComplete = (task: TaskLike) => {
+    if (task.status === "completed" || task.status === "blocked") {
+      toggleDone(task.id);
+      return;
+    }
+    setTaskPendingComplete(task);
+  };
 
   const category = initialCategory
     ? categories.find((c) => c.id === initialCategory)
@@ -107,9 +131,10 @@ export function TaskBoard({
   );
 
   const rowByTask = useMemo(
-    () => new Map<TaskLike, (typeof pool)[number]>(
-      pool.map((row) => [row.task, row]),
-    ),
+    () =>
+      new Map<TaskLike, (typeof pool)[number]>(
+        pool.map((row) => [row.task, row]),
+      ),
     [pool],
   );
 
@@ -142,13 +167,13 @@ export function TaskBoard({
       {category && (
         <Link
           href={ROUTES.eventTasks(eventId)}
-          className="border-rodeo-line bg-card text-rodeo-ink-soft mb-3 inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs"
+          className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full border border-rodeo-line bg-card px-3 py-1 text-xs text-rodeo-ink-soft"
         >
           Área: {category.name} ✕
         </Link>
       )}
 
-      <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
+      <div className="-mx-5 no-scrollbar flex gap-2 overflow-x-auto px-5">
         {filters.map((f) => (
           <FilterPill
             key={f.key}
@@ -166,7 +191,7 @@ export function TaskBoard({
 
       <div className="mt-2.5">
         <Select value={personId} onValueChange={setPersonId}>
-          <SelectTrigger className="border-rodeo-line bg-card text-rodeo-ink-soft h-auto w-fit gap-1.5 rounded-full px-3.5 py-2 text-sm">
+          <SelectTrigger className="h-auto w-fit gap-1.5 rounded-full border-rodeo-line bg-card px-3.5 py-2 text-sm text-rodeo-ink-soft">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -205,7 +230,7 @@ export function TaskBoard({
               >
                 {group.label} · {group.tasks.length}
               </span>
-              <span className="bg-rodeo-line h-px flex-1" aria-hidden="true" />
+              <span className="h-px flex-1 bg-rodeo-line" aria-hidden="true" />
             </div>
             <div className="flex flex-col gap-2.5">
               {group.tasks.map((task) => {
@@ -214,7 +239,7 @@ export function TaskBoard({
                   <SwipeableTaskRow
                     key={task.id}
                     blocked={task.status === "blocked"}
-                    onComplete={() => toggleDone(task.id)}
+                    onComplete={() => requestComplete(task)}
                     onPostpone={() =>
                       updateDueDate(task.id, addDays(task.dueDate, 1))
                     }
@@ -223,7 +248,8 @@ export function TaskBoard({
                     <TaskCard
                       view={row}
                       onClick={() => selectTask(task.id)}
-                      onToggleDone={() => toggleDone(task.id)}
+                      onToggleDone={() => requestComplete(task)}
+                      onDelete={() => setTaskPendingDelete(task)}
                     />
                   </SwipeableTaskRow>
                 );
@@ -234,8 +260,45 @@ export function TaskBoard({
       </div>
 
       {groups.length === 0 && (
-        <p className="text-rodeo-ink-soft mt-6 text-sm">{emptyLabel}</p>
+        <p className="mt-6 text-sm text-rodeo-ink-soft">{emptyLabel}</p>
       )}
+
+      <ConfirmDialog
+        open={Boolean(taskPendingDelete)}
+        onOpenChange={(open) => {
+          if (!open) setTaskPendingDelete(null);
+        }}
+        title="Eliminar tarea"
+        description={
+          taskPendingDelete
+            ? `¿Seguro que quieres eliminar «${taskPendingDelete.title}»? No se puede deshacer.`
+            : ""
+        }
+        onConfirm={() => {
+          if (!taskPendingDelete) return;
+          deleteTask(taskPendingDelete.id);
+          toast("Tarea eliminada.");
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(taskPendingComplete)}
+        onOpenChange={(open) => {
+          if (!open) setTaskPendingComplete(null);
+        }}
+        title="Marcar como hecha"
+        description={
+          taskPendingComplete
+            ? `¿Confirmas que «${taskPendingComplete.title}» está terminada?`
+            : ""
+        }
+        confirmLabel="Marcar hecha"
+        variant="default"
+        onConfirm={() => {
+          if (!taskPendingComplete) return;
+          toggleDone(taskPendingComplete.id);
+        }}
+      />
     </div>
   );
 }
@@ -263,7 +326,7 @@ function FilterPill({
               "border-transparent font-semibold",
               activeClassName ?? "bg-primary text-primary-foreground",
             )
-          : "border-rodeo-line bg-card text-rodeo-ink-soft font-normal",
+          : "border-rodeo-line bg-card font-normal text-rodeo-ink-soft",
       )}
     >
       {label}
