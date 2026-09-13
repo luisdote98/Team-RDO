@@ -34,7 +34,7 @@ export function LoginForm({
           value={name}
           onChange={(event) => setName(event.target.value)}
           autoFocus
-          className="rounded-xl border border-[#3d372f] bg-[#262119] p-3.5 text-base normal-case tracking-normal text-[#faf7f0]"
+          className="rounded-xl border border-[#3d372f] bg-[#262119] p-3.5 text-base tracking-normal text-[#faf7f0] normal-case"
         />
       </label>
 
@@ -46,7 +46,7 @@ export function LoginForm({
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           autoComplete="current-password"
-          className="rounded-xl border border-[#3d372f] bg-[#262119] p-3.5 text-base normal-case tracking-normal text-[#faf7f0]"
+          className="rounded-xl border border-[#3d372f] bg-[#262119] p-3.5 text-base tracking-normal text-[#faf7f0] normal-case"
         />
       </label>
 
@@ -59,14 +59,10 @@ export function LoginForm({
       <button
         type="submit"
         disabled={pending}
-        className="bg-rodeo-gold text-rodeo-ink mt-2 rounded-xl p-4 text-base font-bold disabled:opacity-60"
+        className="mt-2 rounded-xl bg-rodeo-gold p-4 text-base font-bold text-rodeo-ink disabled:opacity-60"
       >
         {pending ? "Entrando..." : "Entrar"}
       </button>
-
-      <p className="mt-1 text-[13px] leading-relaxed text-[#b9ae9c]">
-        Prueba Luis / dote., Oliver / bort. o Guille / glassis.
-      </p>
     </form>
   );
 }

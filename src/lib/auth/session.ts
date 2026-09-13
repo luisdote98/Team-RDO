@@ -22,7 +22,7 @@ export function signSession(personId: string): string {
   return `${payload}.${sign(payload)}`;
 }
 
-function verifySession(cookieValue: string): string | null {
+export function verifySession(cookieValue: string): string | null {
   const [personId, expiry, signature] = cookieValue.split(".");
   if (!personId || !expiry || !signature) return null;
 

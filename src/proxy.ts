@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { SESSION_COOKIE } from "@/lib/auth/session";
+import { SESSION_COOKIE, verifySession } from "@/lib/auth/session";
 
 export function proxy(request: NextRequest) {
-  const hasSession = request.cookies.has(SESSION_COOKIE);
+  const cookieValue = request.cookies.get(SESSION_COOKIE)?.value;
+  const hasSession = Boolean(cookieValue && verifySession(cookieValue));
   const { pathname, search } = request.nextUrl;
 
   if (pathname === "/login") {
@@ -17,7 +18,11 @@ export function proxy(request: NextRequest) {
   if (!hasSession) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("from", pathname + search);
-    return NextResponse.redirect(loginUrl);
+    const response = NextResponse.redirect(loginUrl);
+    if (cookieValue) {
+      response.cookies.delete(SESSION_COOKIE);
+    }
+    return response;
   }
 
   return NextResponse.next();
