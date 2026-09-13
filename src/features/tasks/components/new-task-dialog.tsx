@@ -1,23 +1,19 @@
 "use client";
 
-import { addDays, differenceInCalendarDays } from "date-fns";
+import { differenceInCalendarDays } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { BottomSheet } from "@/components/common/bottom-sheet";
 import { PillButton } from "@/components/common/pill-button";
 import { Input } from "@/components/ui/input";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { useTaskStore } from "@/features/tasks/store/task-store";
 import { TASK_PRIORITY_META } from "@/lib/constants";
 import { daysFromToday, today } from "@/lib/date";
 import { TASK_PRIORITIES, type TaskPriority } from "@/types/domain";
 
-type DueKey = "hoy" | "3dias" | "1semana" | "evento";
+const toInputDate = (date: Date) => date.toISOString().slice(0, 10);
 
 export function NewTaskDialog({
   eventId,
@@ -37,22 +33,15 @@ export function NewTaskDialog({
   const [assigneeId, setAssigneeId] = useState(currentUserId);
   const [priority, setPriority] = useState<TaskPriority>("high");
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
-  const [dueKey, setDueKey] = useState<DueKey>("3dias");
+  const [dueDate, setDueDate] = useState(toInputDate(today()));
 
   const reset = () => {
     setTitle("");
     setAssigneeId(currentUserId);
     setPriority("high");
     setCategoryId(categories[0]?.id ?? "");
-    setDueKey("3dias");
+    setDueDate(toInputDate(today()));
   };
-
-  const dueOptions: { key: DueKey; label: string; date: Date }[] = [
-    { key: "hoy", label: "Hoy", date: today() },
-    { key: "3dias", label: "En 3 días", date: addDays(today(), 3) },
-    { key: "1semana", label: "En 1 semana", date: addDays(today(), 7) },
-    { key: "evento", label: "Día del evento", date: eventDate },
-  ];
 
   const days = daysFromToday(eventDate);
   const countdown =
@@ -60,16 +49,16 @@ export function NewTaskDialog({
 
   const handleCreate = () => {
     const trimmed = title.trim();
-    if (!trimmed) return;
-    const dueDate = dueOptions.find((option) => option.key === dueKey)!.date;
+    if (!trimmed || !dueDate) return;
+    const parsedDate = new Date(`${dueDate}T00:00:00`);
 
     addTask({
       title: trimmed,
       categoryId,
       assigneeId,
       priority,
-      dueDate,
-      offsetDays: differenceInCalendarDays(dueDate, eventDate),
+      dueDate: parsedDate,
+      offsetDays: differenceInCalendarDays(parsedDate, eventDate),
     });
 
     const assigneeName = people.find((p) => p.id === assigneeId)?.name ?? "";
@@ -79,111 +68,96 @@ export function NewTaskDialog({
   };
 
   return (
-    <Sheet
+    <BottomSheet
       open={isNewTaskOpen}
       onOpenChange={(open) => {
         setNewTaskOpen(open);
         if (!open) reset();
       }}
     >
-      <SheetContent
-        key={eventId}
-        side="bottom"
-        showCloseButton={false}
-        className="bg-rodeo-bone mx-auto max-h-[88%] w-full max-w-4xl overflow-y-auto rounded-t-[22px] border-none p-0"
-      >
-        <div className="px-5 pt-3.5 pb-7">
-          <div
-            className="mx-auto mb-1 h-1 w-10 rounded-full bg-[#d8cfbd]"
-            aria-hidden="true"
-          />
-          <SheetTitle className="font-display mt-3 text-[26px] font-semibold tracking-[0.03em] uppercase">
-            Nueva tarea
-          </SheetTitle>
-          <SheetDescription className="text-rodeo-ink-soft mt-2 text-sm">
-            En {eventName} · {countdown}
-          </SheetDescription>
+      <div key={eventId} className="px-5 pt-1 pb-7">
+        <SheetTitle className="font-display mt-3 text-[26px] font-semibold tracking-[0.03em] uppercase">
+          Nueva tarea
+        </SheetTitle>
+        <SheetDescription className="text-rodeo-ink-soft mt-2 text-sm">
+          En {eventName} · {countdown}
+        </SheetDescription>
 
-          <Input
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="Qué hay que hacer"
-            autoFocus
-            className="border-rodeo-line mt-[18px] h-auto rounded-[14px] bg-white px-[15px] py-[15px] text-base"
-          />
+        <Input
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="Qué hay que hacer"
+          autoFocus
+          className="border-rodeo-line mt-[18px] h-auto rounded-[14px] bg-white px-[15px] py-[15px] text-base"
+        />
 
-          <p className="rodeo-eyebrow mt-5 mb-2.5">Responsable</p>
-          <div className="flex gap-2">
-            {people.map((person) => (
-              <PillButton
-                key={person.id}
-                label={person.name}
-                active={assigneeId === person.id}
-                style={{ backgroundColor: person.color, color: "#fff" }}
-                onClick={() => setAssigneeId(person.id)}
-              />
-            ))}
-          </div>
-
-          <p className="rodeo-eyebrow mt-5 mb-2.5">Prioridad</p>
-          <div className="flex flex-wrap gap-2">
-            {TASK_PRIORITIES.map((value) => (
-              <PillButton
-                key={value}
-                label={TASK_PRIORITY_META[value].label}
-                active={priority === value}
-                style={{
-                  backgroundColor: TASK_PRIORITY_META[value].color,
-                  color: "#fff",
-                }}
-                onClick={() => setPriority(value)}
-              />
-            ))}
-          </div>
-
-          <p className="rodeo-eyebrow mt-5 mb-2.5">Área</p>
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category) => (
-              <PillButton
-                key={category.id}
-                label={category.name}
-                active={categoryId === category.id}
-                onClick={() => setCategoryId(category.id)}
-              />
-            ))}
-          </div>
-
-          <p className="rodeo-eyebrow mt-5 mb-2.5">Para cuándo</p>
-          <div className="flex flex-wrap gap-2">
-            {dueOptions.map((option) => (
-              <PillButton
-                key={option.key}
-                label={option.label}
-                active={dueKey === option.key}
-                onClick={() => setDueKey(option.key)}
-              />
-            ))}
-          </div>
-
-          <div className="mt-[26px] flex gap-2.5">
-            <button
-              type="button"
-              onClick={handleCreate}
-              disabled={!title.trim()}
-              className="bg-primary text-primary-foreground flex-1 rounded-[14px] py-[15px] text-base font-bold disabled:opacity-40"
-            >
-              Crear tarea
-            </button>
-            <button
-              type="button"
-              onClick={() => setNewTaskOpen(false)}
-              className="text-rodeo-ink-soft rounded-[14px] border border-[#d8cfbd] px-5 py-[15px] text-base font-semibold"
-            >
-              Cancelar
-            </button>
-          </div>
+        <p className="rodeo-eyebrow mt-5 mb-2.5">Responsable</p>
+        <div className="flex gap-2">
+          {people.map((person) => (
+            <PillButton
+              key={person.id}
+              label={person.name}
+              active={assigneeId === person.id}
+              style={{ backgroundColor: person.color, color: "#fff" }}
+              onClick={() => setAssigneeId(person.id)}
+            />
+          ))}
         </div>
-      </SheetContent>
-    </Sheet>
+
+        <p className="rodeo-eyebrow mt-5 mb-2.5">Prioridad</p>
+        <div className="flex flex-wrap gap-2">
+          {TASK_PRIORITIES.map((value) => (
+            <PillButton
+              key={value}
+              label={TASK_PRIORITY_META[value].label}
+              active={priority === value}
+              style={{
+                backgroundColor: TASK_PRIORITY_META[value].color,
+                color: "#fff",
+              }}
+              onClick={() => setPriority(value)}
+            />
+          ))}
+        </div>
+
+        <p className="rodeo-eyebrow mt-5 mb-2.5">Área</p>
+        <div className="flex flex-wrap gap-2">
+          {categories.map((category) => (
+            <PillButton
+              key={category.id}
+              label={category.name}
+              active={categoryId === category.id}
+              onClick={() => setCategoryId(category.id)}
+            />
+          ))}
+        </div>
+
+        <p className="rodeo-eyebrow mt-5 mb-2.5">Para cuándo</p>
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(event) => setDueDate(event.target.value)}
+          className="border-rodeo-line w-full rounded-[14px] border bg-white px-[15px] py-[15px] text-base"
+        />
+
+        <div className="mt-[26px] flex gap-2.5">
+          <button
+            type="button"
+            onClick={handleCreate}
+            disabled={!title.trim() || !dueDate}
+            className="bg-primary text-primary-foreground flex-1 rounded-[14px] py-[15px] text-base font-bold disabled:opacity-40"
+          >
+            Crear tarea
+          </button>
+          <button
+            type="button"
+            onClick={() => setNewTaskOpen(false)}
+            className="text-rodeo-ink-soft rounded-[14px] border border-[#d8cfbd] px-5 py-[15px] text-base font-semibold"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </BottomSheet>
   );
 }

@@ -2,13 +2,9 @@
 
 import { useState } from "react";
 
+import { BottomSheet } from "@/components/common/bottom-sheet";
 import { PillButton } from "@/components/common/pill-button";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import type {
   DemoCategory,
   DemoMember,
@@ -34,26 +30,20 @@ export function ExpenseDialog({
   onSave: (input: ExpenseInput) => void;
 }) {
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="bottom"
-        showCloseButton={false}
-        className="bg-rodeo-bone mx-auto max-h-[88%] w-full max-w-4xl overflow-y-auto rounded-t-[22px] border-none p-0"
-      >
-        {/* key: cada apertura arranca el formulario limpio, sin useEffect. */}
-        <ExpenseForm
-          key={open ? "open" : "closed"}
-          people={people}
-          categories={categories}
-          defaultPersonId={defaultPersonId}
-          onCancel={() => onOpenChange(false)}
-          onSave={(input) => {
-            onSave(input);
-            onOpenChange(false);
-          }}
-        />
-      </SheetContent>
-    </Sheet>
+    <BottomSheet open={open} onOpenChange={onOpenChange}>
+      {/* key: cada apertura arranca el formulario limpio, sin useEffect. */}
+      <ExpenseForm
+        key={open ? "open" : "closed"}
+        people={people}
+        categories={categories}
+        defaultPersonId={defaultPersonId}
+        onCancel={() => onOpenChange(false)}
+        onSave={(input) => {
+          onSave(input);
+          onOpenChange(false);
+        }}
+      />
+    </BottomSheet>
   );
 }
 
@@ -91,11 +81,7 @@ function ExpenseForm({
   };
 
   return (
-    <div className="px-5 pt-3.5 pb-7">
-      <div
-        className="mx-auto mb-1 h-1 w-10 rounded-full bg-[#d8cfbd]"
-        aria-hidden="true"
-      />
+    <div className="px-5 pt-1 pb-7">
       <SheetTitle className="font-display mt-3 text-[26px] font-semibold tracking-[0.03em] uppercase">
         Nuevo gasto
       </SheetTitle>

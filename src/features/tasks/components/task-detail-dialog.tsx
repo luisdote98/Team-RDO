@@ -2,14 +2,10 @@
 
 import { toast } from "sonner";
 
+import { BottomSheet } from "@/components/common/bottom-sheet";
 import { PillButton } from "@/components/common/pill-button";
 import { TaskChips } from "@/components/common/task-badges";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { useTaskStore } from "@/features/tasks/store/task-store";
 import { TASK_PRIORITY_META, TASK_STATUS_META } from "@/lib/constants";
@@ -40,18 +36,13 @@ export function TaskDetailDialog() {
   const view = selectedTaskId ? viewById.get(selectedTaskId) : undefined;
 
   return (
-    <Sheet
+    <BottomSheet
       open={Boolean(view)}
       onOpenChange={(open) => {
         if (!open) selectTask(null);
       }}
     >
-      <SheetContent
-        side="bottom"
-        showCloseButton={false}
-        className="bg-rodeo-bone mx-auto max-h-[88%] w-full max-w-4xl overflow-y-auto rounded-t-[22px] border-none p-0"
-      >
-        {view &&
+      {view &&
           (() => {
             const { task, category, waitingFor } = view;
             const blocked = task.status === "blocked";
@@ -80,11 +71,7 @@ export function TaskDetailDialog() {
             };
 
             return (
-              <div className="px-5 pt-3.5 pb-7">
-                <div
-                  className="mx-auto mb-1 h-1 w-10 rounded-full bg-[#d8cfbd]"
-                  aria-hidden="true"
-                />
+              <div className="px-5 pt-1 pb-7">
                 <SheetTitle className="sr-only">{task.title}</SheetTitle>
                 <SheetDescription className="sr-only">
                   Detalle y edición de la tarea
@@ -196,7 +183,6 @@ export function TaskDetailDialog() {
               </div>
             );
           })()}
-      </SheetContent>
-    </Sheet>
+    </BottomSheet>
   );
 }
