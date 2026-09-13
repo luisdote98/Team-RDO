@@ -44,8 +44,8 @@ export const demoMembers: DemoMember[] = [
     id: "oliver",
     name: "Oliver",
     role: "Supervisión y control: coordinación de seguridad, DJs y camareros; pagos al staff y control del dinero de barra",
-    color: "#7a2438",
-    bgColor: "#f4e3e7",
+    color: "#6b3f8a",
+    bgColor: "#efe3f5",
   },
   {
     id: "guille",

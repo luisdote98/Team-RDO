@@ -5,7 +5,7 @@
 
 insert into members (id, name, role, color, bg_color, password_hash) values
   ('luis', 'Luis', 'Sector técnico: sonido, equipo DJ, montaje, cartelería y archivo de contenido', '#2c6e8f', '#e3f0f6', '$2b$12$hxnfiZxF68wf8EQ79zB1a.AL9fsz7YfAgs6nmLY6C0wIWrhizJOH.'),
-  ('oliver', 'Oliver', 'Supervisión y control: coordinación de seguridad, DJs y camareros; pagos al staff y control del dinero de barra', '#7a2438', '#f4e3e7', '$2b$12$bUHSCtxxlNi826zJIdKtZOKCF.ublWSB3YECzDANDTTUJDWo51mBe'),
+  ('oliver', 'Oliver', 'Supervisión y control: coordinación de seguridad, DJs y camareros; pagos al staff y control del dinero de barra', '#6b3f8a', '#efe3f5', '$2b$12$bUHSCtxxlNi826zJIdKtZOKCF.ublWSB3YECzDANDTTUJDWo51mBe'),
   ('guille', 'Guille', 'Sector comercial y RRPP: contenido, redes, ticketing y coordinación de accesos', '#8a6d12', '#f7f0d8', '$2b$12$k6/Hl4FUoUdfJdavOvm.f.rNQK02.tGtor6HxTXxeVLTcwSVpPyfS');
 
 insert into categories (id, name, color) values
